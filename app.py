@@ -24,7 +24,7 @@ def explain_prediction(text):
 # 🌐 FUNCTION: Fetch Live News
 # -------------------------------
 def get_live_news():
-    url = "https://newsapi.org/v2/top-headlines?country=in&apiKey=YOUR_API_KEY"
+    url = "https://newsapi.org/v2/top-headlines?country=in&apiKey=e1369130679b4457a59a2464a253a256"
     response = requests.get(url)
     data = response.json()
     articles = []
