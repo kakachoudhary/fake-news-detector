@@ -105,11 +105,13 @@ if st.button("📰 Load Live News", key="load_news"):
 # -------------------------------
 # 🤖 ANALYZE LIVE NEWS
 # -------------------------------
-if st.button("🤖 Analyze Live News", key="analyze_live"):
+# 🤖 ANALYZE LIVE NEWS
+# -------------------------------
+if st.button("🤖 Analyze Live News", key="analyze_live_news_btn"):
     news_list = get_live_news()
 
-    if "Error" in news_list[0]:
-        st.error(news_list[0])
+    if not news_list or "Error" in news_list[0]:
+        st.error("⚠️ Cannot analyze news")
     else:
         for news in news_list:
             X = vectorizer.transform([news])
@@ -119,7 +121,6 @@ if st.button("🤖 Analyze Live News", key="analyze_live"):
                 st.success(f"✅ {news}")
             else:
                 st.error(f"❌ {news}")
-
 # -------------------------------
 # 🎉 EXTRA
 # -------------------------------
