@@ -40,27 +40,67 @@ def highlight_text(text, words):
 # -------------------------------
 # 🌐 FETCH LIVE NEWS
 # -------------------------------
+# 🌐 FETCH LIVE NEWS (FIXED)
+# -------------------------------
 def get_live_news():
-    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={API_KEY}"
+    url = f"https://newsapi.org/v2/everything?q=india&apiKey={API_KEY}"
 
     try:
         response = requests.get(url)
         data = response.json()
 
-        news_list = []
+        # DEBUG (you can remove later)
+        st.write("DEBUG:", data)
 
-        if data["status"] == "ok":
+        articles = []
+
+        if data.get("status") == "ok":
             for article in data["articles"][:5]:
                 title = article.get("title", "No title")
                 source = article.get("source", {}).get("name", "Unknown")
-                news_list.append(f"{title} ({source})")
+                articles.append(f"{title} ({source})")
         else:
-            return ["⚠️ API error or limit reached"]
+            return [f"❌ API Error: {data.get('message')}"]
 
-        return news_list
+        return articles
 
     except Exception as e:
         return [f"Error: {str(e)}"]
+
+
+# -------------------------------
+# 🌐 LOAD LIVE NEWS (BUTTON)
+# -------------------------------
+st.markdown("---")
+st.subheader("🌐 Live News")
+
+if st.button("📰 Load Live News"):
+    news_list = get_live_news()
+
+    if not news_list or "Error" in news_list[0]:
+        st.error("⚠️ Unable to fetch news")
+    else:
+        for i, news in enumerate(news_list):
+            st.write(f"{i+1}. {news}")
+
+
+# -------------------------------
+# 🤖 ANALYZE LIVE NEWS (FIXED)
+# -------------------------------
+if st.button("🤖 Analyze Live News"):
+    news_list = get_live_news()
+
+    if not news_list or "Error" in news_list[0]:
+        st.error("⚠️ Cannot analyze news (API issue)")
+    else:
+        for news in news_list:
+            transformed = vectorizer.transform([news])
+            prediction = model.predict(transformed)
+
+            if prediction[0] == 1:
+                st.success(f"✅ {news}")
+            else:
+                st.error(f"❌ {news}")
 
 # -------------------------------
 # ✍️ USER INPUT
