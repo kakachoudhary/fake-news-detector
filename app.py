@@ -3,44 +3,71 @@ import pickle
 import requests
 import matplotlib.pyplot as plt
 
-# Load model
+# -------------------------------
+# 🔐 API KEY (Replace with yours)
+# -------------------------------
+API_KEY = st.secrets["NEWS_API_KEY"]
+
+# -------------------------------
+# 📦 LOAD MODEL
+# -------------------------------
 model = pickle.load(open("model.pkl", "rb"))
 vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 
-st.set_page_config(page_title="Fake News Detector", page_icon="📰")
+# -------------------------------
+# 🎨 PAGE CONFIG
+# -------------------------------
+st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="centered")
 
-st.title("📰 AI Fake News Detection System")
-st.write("Detect Fake News with Confidence Score, Explanation & Live News")
+st.markdown("<h1 style='text-align: center;'>📰 AI Fake News Detection</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Detect Fake News with AI, Confidence Score, Graphs & Live News</p>", unsafe_allow_html=True)
 
 # -------------------------------
-# 🧠 FUNCTION: Explain Prediction
+# 🧠 EXPLANATION FUNCTION
 # -------------------------------
 def explain_prediction(text):
     words = text.split()
-    important_words = words[:10]  # simple logic (first 10 words)
-    return important_words
+    return words[:10]
 
 # -------------------------------
-# 🌐 FUNCTION: Fetch Live News
+# 🔥 HIGHLIGHT WORDS FUNCTION
+# -------------------------------
+def highlight_text(text, words):
+    for word in words:
+        text = text.replace(word, f"<span style='color:red; font-weight:bold'>{word}</span>")
+    return text
+
+# -------------------------------
+# 🌐 FETCH LIVE NEWS
 # -------------------------------
 def get_live_news():
-    url = "https://newsapi.org/v2/top-headlines?country=in&apiKey=e1369130679b4457a59a2464a253a256"
-    response = requests.get(url)
-    data = response.json()
-    articles = []
+    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={API_KEY}"
 
-    if "articles" in data:
-        for article in data["articles"][:5]:
-            articles.append(article["title"])
+    try:
+        response = requests.get(url)
+        data = response.json()
 
-    return articles
+        news_list = []
+
+        if data["status"] == "ok":
+            for article in data["articles"][:5]:
+                title = article.get("title", "No title")
+                source = article.get("source", {}).get("name", "Unknown")
+                news_list.append(f"{title} ({source})")
+        else:
+            return ["⚠️ API error or limit reached"]
+
+        return news_list
+
+    except Exception as e:
+        return [f"Error: {str(e)}"]
 
 # -------------------------------
-# ✍️ INPUT
+# ✍️ USER INPUT
 # -------------------------------
-input_text = st.text_area("Enter News Content", height=200)
+input_text = st.text_area("✍️ Enter News Content", height=200)
 
-if st.button("Analyze News"):
+if st.button("🔍 Analyze News"):
     if input_text.strip() != "":
         transformed = vectorizer.transform([input_text])
         prediction = model.predict(transformed)
@@ -48,45 +75,73 @@ if st.button("Analyze News"):
 
         confidence = max(prob[0]) * 100
 
-        st.subheader("Result")
+        st.markdown("---")
+        st.subheader("🧾 Result")
 
         if prediction[0] == 1:
             st.success("✅ Real News")
         else:
             st.error("❌ Fake News")
 
-        st.info(f"Confidence Score: {confidence:.2f}%")
-
-        # 🎯 Explanation
-        st.subheader("🧠 Why this result?")
-        important_words = explain_prediction(input_text)
-        st.write("Important words influencing prediction:")
-        st.write(", ".join(important_words))
+        st.info(f"🔎 Confidence Score: {confidence:.2f}%")
 
         # 📊 Graph
-        st.subheader("📊 Prediction Probability")
+        st.subheader("📊 Prediction Graph")
         labels = ["Fake", "Real"]
         values = prob[0]
 
         fig, ax = plt.subplots()
         ax.bar(labels, values)
         ax.set_ylabel("Probability")
-        ax.set_title("Fake vs Real Prediction")
+        ax.set_title("Fake vs Real")
 
         st.pyplot(fig)
 
+        # 🧠 Explanation
+        st.subheader("🧠 Important Words")
+        important_words = explain_prediction(input_text)
+        st.write(", ".join(important_words))
+
+        # 🔥 Highlight Text
+        st.subheader("📝 Highlighted Text")
+        highlighted = highlight_text(input_text, important_words)
+        st.markdown(highlighted, unsafe_allow_html=True)
+
     else:
-        st.warning("Please enter text")
+        st.warning("⚠️ Please enter some text")
 
 # -------------------------------
-# 🌐 LIVE NEWS SECTION
+# 🌐 LIVE NEWS
 # -------------------------------
-st.subheader("🌐 Live News (Top Headlines)")
+st.markdown("---")
+st.subheader("🌐 Live News Headlines")
 
-if st.button("Load Live News"):
-    try:
-        news_list = get_live_news()
-        for i, news in enumerate(news_list):
-            st.write(f"{i+1}. {news}")
-    except:
-        st.error("Error fetching news. Check API key.")
+if st.button("📰 Load Live News"):
+    news_list = get_live_news()
+
+    for i, news in enumerate(news_list):
+        st.write(f"{i+1}. {news}")
+
+# -------------------------------
+# 🤖 ANALYZE LIVE NEWS
+# -------------------------------
+if st.button("🤖 Analyze Live News"):
+    news_list = get_live_news()
+
+    for news in news_list:
+        transformed = vectorizer.transform([news])
+        prediction = model.predict(transformed)
+
+        if prediction[0] == 1:
+            st.success(f"✅ {news}")
+        else:
+            st.error(f"❌ {news}")
+
+# -------------------------------
+# 🎉 EXTRA UI EFFECT
+# -------------------------------
+st.markdown("---")
+st.caption("Made with ❤️ using Machine Learning & NLP")
+
+if st.button("🎈 Celebrate"):
+    st.balloons()
