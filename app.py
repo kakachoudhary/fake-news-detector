@@ -110,17 +110,30 @@ if st.button("🔍 Analyze News"):
     else:
         st.warning("⚠️ Please enter some text")
 
-# -------------------------------
-# 🌐 LIVE NEWS
-# -------------------------------
-st.markdown("---")
-st.subheader("🌐 Live News Headlines")
+# ------------------------------- 🌐 LIVE NEWS
+def get_live_news():
+    url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={API_KEY}"
 
-if st.button("📰 Load Live News"):
-    news_list = get_live_news()
+    try:
+        response = requests.get(url)
+        data = response.json()
 
-    for i, news in enumerate(news_list):
-        st.write(f"{i+1}. {news}")
+        st.write("DEBUG:", data)  # 👈 ADD THIS LINE
+
+        articles = []
+
+        if data.get("status") == "ok":
+            for article in data["articles"][:5]:
+                title = article.get("title", "No title")
+                source = article.get("source", {}).get("name", "Unknown")
+                articles.append(f"{title} ({source})")
+        else:
+            return [f"❌ API Error: {data.get('message')}"]
+
+        return articles
+
+    except Exception as e:
+        return [f"Error: {str(e)}"]
 
 # -------------------------------
 # 🤖 ANALYZE LIVE NEWS
